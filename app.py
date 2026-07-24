@@ -1,7 +1,5 @@
-import http.server
-import socketserver
-import threading
 import os
+import base64
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -14,24 +12,31 @@ st.set_page_config(
 
 st.title("Mapa de Ilícitos - SNAP")
 
-# Definir la ruta del proyecto
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PORT = 8501 # Puerto interno para servir los estáticos
+INDEX_PATH = os.path.join(BASE_DIR, "index.html")
 
-# Función para iniciar el servidor estático en segundo plano
-def start_server():
-    os.chdir(BASE_DIR)
-    Handler = http.server.SimpleHTTPRequestHandler
-    # Permitir reutilizar la dirección para evitar errores al recargar
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        httpd.serve_forever()
+if os.path.exists(INDEX_PATH):
+    # 1. Leer el HTML original
+    with open(INDEX_PATH, "r", encoding="utf-8") as f:
+        html_content = f.read()
 
-# Iniciar el servidor en un hilo secundario solo si no se ha iniciado antes
-if "server_started" not in st.session_state:
-    thread = threading.Thread(target=start_server, daemon=True)
-    thread.start()
-    st.session_state["server_started"] = True
+    # 2. Agregar etiqueta <base> para que encuentre la carpeta /layers, /resources, etc.
+    # Esto le dice al navegador dónde buscar los archivos JS/CSS dentro de GitHub raw
+    repo_url = "https://raw.githubusercontent.com/alexiscantares/Mapa-Il-citos-SNAP---Gesti-n-Tecnificada/main/"
+    base_tag = f'<base href="{repo_url}">'
+    
+    # Inyectar <base> en el <head> del HTML
+    if "<head>" in html_content:
+        html_content = html_content.replace("<head>", f"<head>\n{base_tag}")
+    else:
+        html_content = base_tag + html_content
 
-# Cargar el mapa desde la raíz del servidor interno mediante iframe
-components.iframe(f"http://localhost:{PORT}/index.html", height=750, scrolling=True)
+    # 3. Convertir a Base64 para cargarlo de forma segura en el iframe
+    b64_html = base64.b64encode(html_content.encode("utf-8")).decode("utf-8")
+    data_url = f"data:text/html;base64,{b64_html}"
+
+    # 4. Renderizar el mapa mediante iframe
+    components.iframe(src=data_url, height=750, scrolling=True)
+
+else:
+    st.error("No se encontró el archivo index.html en el repositorio.")
