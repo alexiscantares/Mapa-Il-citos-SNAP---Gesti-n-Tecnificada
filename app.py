@@ -1,8 +1,11 @@
+import http.server
+import socketserver
+import threading
 import os
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Configuración de la página
+# Configuración de página
 st.set_page_config(
     page_title="Mapa Ilícitos SNAP",
     layout="wide",
@@ -11,16 +14,24 @@ st.set_page_config(
 
 st.title("Mapa de Ilícitos - SNAP")
 
-# Obtener la ruta del archivo index.html en el repositorio
+# Definir la ruta del proyecto
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INDEX_PATH = os.path.join(BASE_DIR, "index.html")
+PORT = 8501 # Puerto interno para servir los estáticos
 
-if os.path.exists(INDEX_PATH):
-    # Leer el HTML del mapa exportado de qgis2web
-    with open(INDEX_PATH, "r", encoding="utf-8") as f:
-        html_data = f.read()
+# Función para iniciar el servidor estático en segundo plano
+def start_server():
+    os.chdir(BASE_DIR)
+    Handler = http.server.SimpleHTTPRequestHandler
+    # Permitir reutilizar la dirección para evitar errores al recargar
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        httpd.serve_forever()
 
-    # Renderizar directamente el contenido HTML
-    components.html(html_data, height=750, scrolling=True)
-else:
-    st.error("No se encontró el archivo index.html en el directorio principal.")
+# Iniciar el servidor en un hilo secundario solo si no se ha iniciado antes
+if "server_started" not in st.session_state:
+    thread = threading.Thread(target=start_server, daemon=True)
+    thread.start()
+    st.session_state["server_started"] = True
+
+# Cargar el mapa desde la raíz del servidor interno mediante iframe
+components.iframe(f"http://localhost:{PORT}/index.html", height=750, scrolling=True)
