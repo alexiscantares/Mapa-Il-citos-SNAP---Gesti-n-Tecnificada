@@ -8,7 +8,7 @@ var lyr_OpenStreetMap_0 = new ol.layer.Tile({
     
     source: new ol.source.XYZ({
     attributions: ' ',
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+        url: 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
     })
 });
 var format_SistemaNacionaldereasProtegidas_1 = new ol.format.GeoJSON();
