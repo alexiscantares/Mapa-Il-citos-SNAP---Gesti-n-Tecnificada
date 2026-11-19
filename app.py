@@ -20,8 +20,8 @@ if os.path.exists(INDEX_PATH):
     with open(INDEX_PATH, "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    # 2. Apuntar al commit exacto (a0e1786) en jsDelivr para evitar la caché vieja de @main
-    cdn_base = '<base href="https://cdn.jsdelivr.net/gh/alexiscantares/Mapa-Il-citos-SNAP---Gesti-n-Tecnificada@a0e1786/">'
+    # 2. Apuntar a la rama main en jsDelivr (donde ya está actualizado layers.js)
+    cdn_base = '<base href="https://cdn.jsdelivr.net/gh/alexiscantares/Mapa-Il-citos-SNAP---Gesti-n-Tecnificada@main/">'
 
     if "<head>" in html_content:
         html_content = html_content.replace("<head>", f"<head>\n{cdn_base}", 1)
